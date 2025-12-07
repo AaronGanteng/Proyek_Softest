@@ -1,0 +1,22 @@
+# --- MAVEN BUILD (Wajib di-ignore) ---
+target/
+*.log
+
+# --- ALLURE REPORT (Wajib di-ignore) ---
+# Folder ini isinya ribuan file sampah hasil tes
+allure-results/
+.allure/
+test-output/
+
+# --- IDE SETTINGS (Settingan VS Code/IntelliJ) ---
+# Tidak perlu di-upload karena settingan laptop orang beda-beda
+.vscode/
+.idea/
+*.iml
+.settings/
+.classpath
+.project
+
+# --- SYSTEM FILES (Sampah Mac/Windows) ---
+.DS_Store
+Thumbs.db
