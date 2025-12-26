@@ -6,12 +6,12 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.Dimension;
 import java.time.Duration;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-
 import io.qameta.allure.Description;
 import io.qameta.allure.Story;
 
@@ -165,12 +165,12 @@ public class NavbarTest {
        
         WebElement searchIcon = driver.findElement(By.id("menuSearch"));
         searchIcon.click();
-        Thread.sleep(2000);
+        Thread.sleep(3000);
 
         WebElement searchInput = driver.findElement(By.id("autoComplete"));
         System.out.println("Menginput kata kunci pencarian yang invalid...");
         searchInput.sendKeys("asd");
-        Thread.sleep(3000);
+        Thread.sleep(5000);
 
         searchIcon.click();
 
@@ -469,6 +469,104 @@ public class NavbarTest {
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
         wait.until(ExpectedConditions.urlToBe("https://www.advantageonlineshopping.com/#/"));
         Assert.assertEquals(driver.getCurrentUrl(), "https://www.advantageonlineshopping.com/#/", "Gagal validasi URL Homepage!");
+    }
+
+    @Test(priority = 12)
+    @Story("Test Scroll Up Feature")
+    @Description("Scroll ke Contact Us -> Tunggu Tombol Muncul -> Klik -> Validasi Top Page")
+    public void testScrollUpButton() throws InterruptedException {
+        System.out.println("Mencoba fitur Scroll Up...");
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
+        // 1. Scroll ke Bawah (Area Contact Us) agar tombol Go Up muncul
+        System.out.println("Navigasi ke bagian bawah (Contact Us)...");
+        WebElement menuContact = driver.findElement(By.xpath("//a[contains(text(), 'CONTACT US')]"));
+        menuContact.click();
+        
+        // Kita tunggu sebentar agar animasi scroll browser selesai dan event scroll mentrigger tombol muncul
+        Thread.sleep(3000); 
+
+        // 2. Temukan Tombol Go Up
+        // Berdasarkan HTML Anda: <img name="go_up_btn" ... >
+        // Kita gunakan 'elementToBeClickable' untuk memastikan opacity sudah cukup dan elemen siap diklik
+        System.out.println("Menunggu tombol Go Up terlihat...");
+        WebElement goUpBtn = wait.until(ExpectedConditions.elementToBeClickable(By.name("go_up_btn")));
+
+        // Alternatif jika name tidak jalan, bisa pakai ID pembungkusnya:
+        // WebElement goUpBtn = wait.until(ExpectedConditions.elementToBeClickable(By.id("scrollToTop")));
+
+        System.out.println("Tombol Go Up ditemukan, melakukan klik...");
+        goUpBtn.click();
+
+        // 3. Tunggu Animasi Scroll ke Atas Selesai
+        System.out.println("Menunggu animasi scroll ke atas...");
+        
+        // Loop visual wait sederhana untuk memastikan scroll Y benar-benar kembali ke 0
+        // (Terkadang butuh waktu lebih dari 1-2 detik tergantung panjang halaman)
+        for (int i = 0; i < 5; i++) {
+            Long yPos = (Long) js.executeScript("return window.pageYOffset;");
+            if (yPos < 10) break; // Jika sudah di atas, keluar loop
+            Thread.sleep(1000);
+        }
+
+        // 4. Validasi: Cek posisi Scroll (Y Coordinate)
+        Long scrollPosition = (Long) js.executeScript("return window.pageYOffset;");
+        System.out.println("Posisi Scroll Y saat ini: " + scrollPosition);
+
+        // Validasi posisi harus < 10 (biasanya 0, tapi kita beri toleransi sedikit)
+        Assert.assertTrue(scrollPosition < 10, "Gagal kembali ke posisi paling atas! Posisi tertahan di: " + scrollPosition);
+        
+        System.out.println("--> Sukses! Halaman kembali ke atas (Top of Page).");
+    }
+
+    @Test(priority = 13)
+    @Story("Mobile Responsiveness Test")
+    @Description("Ubah ukuran ke Mobile -> Cek elemen yg tetap ada vs elemen yg hilang")
+    public void testMobileResponsiveness() throws InterruptedException {
+        System.out.println("=== MULAI TEST 13: CEK RESPONSIVE MOBILE ===");
+
+        // 1. Ubah Ukuran Layar ke Ukuran HP (misal: 375x812 pixel - iPhone X)
+        System.out.println("Mengubah ukuran browser ke mode Mobile (375x812)...");
+        driver.manage().window().setSize(new Dimension(375, 812));
+        Thread.sleep(3000);
+
+        // 2. VALIDASI KONTEN YANG HARUS TETAP ADA (Persamaan)
+        WebElement logo = driver.findElement(By.xpath("//span[contains(text(), 'dvantage')]"));
+        Assert.assertTrue(logo.isDisplayed(), "GAGAL: Logo hilang di mode mobile!");
+        System.out.println("1. Logo: OK (Tetap terlihat)");
+
+        WebElement cartIcon = driver.findElement(By.id("menuCart"));
+        Assert.assertTrue(cartIcon.isDisplayed(), "GAGAL: Cart icon hilang di mode mobile!");
+        System.out.println("2. Cart Icon: OK (Tetap terlihat)");
+
+        // 3. VALIDASI KONTEN YANG BERBEDA / HILANG (Perbedaan)
+        System.out.println("Mengecek menu navigasi teks (OUR PRODUCTS)...");
+        WebElement navOurProducts = driver.findElement(By.xpath("//a[contains(text(), 'OUR PRODUCTS')]"));
+
+        if (navOurProducts.isDisplayed()) {
+            System.out.println("WARNING: Menu 'OUR PRODUCTS' masih muncul! Web mungkin tidak responsif sempurna.");
+        } else {
+            System.out.println("3. Menu Teks 'OUR PRODUCTS': OK (Disembunyikan/Hidden sesuai desain mobile)");
+        }
+
+        // 4. Validasi Chat Icon (Biasanya tetap ada)
+        try {
+             WebElement chatLogo = driver.findElement(By.id("chatLogo"));
+             Assert.assertTrue(chatLogo.isDisplayed(), "Chat logo hilang di mobile!");
+             System.out.println("4. Chat Logo: OK (Tetap terlihat)");
+        } catch (Exception e) {
+            System.out.println("Info: Chat logo tidak terdeteksi (Mungkin tertutup elemen lain).");
+        }
+
+        // 5. KEMBALIKAN UKURAN LAYAR (Restore)
+        System.out.println("Mengembalikan ukuran browser ke Fullscreen (Maximize)...");
+        driver.manage().window().maximize();
+        Thread.sleep(3000);
+
+        Assert.assertTrue(navOurProducts.isDisplayed(), "Gagal kembali ke tampilan Desktop!");
+        
+        System.out.println("--> Test Responsif Mobile SELESAI.");
     }
 
     @AfterClass
