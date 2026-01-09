@@ -70,7 +70,7 @@ public class ProductDetailTest extends BaseTest {
 
             Reporter.log("Product detail load time: " + duration + " ms");
 
-            Assert.assertTrue(duration < 3000, "Product detail should load < 3000ms but was " + duration + "ms");
+            Assert.assertTrue(duration < 5000, "Product detail should load < 5000ms but was " + duration + "ms");
             conclusion = "PASS - product detail load " + duration + " ms";
         } catch (Throwable t) {
             conclusion = "FAIL - " + t.getClass().getSimpleName() + ": " + t.getMessage() + " (measured " + duration

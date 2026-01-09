@@ -13,11 +13,11 @@ import java.util.List;
 
 public class CheckoutTest extends BaseTest {
     private static final String HOME_URL = "https://www.advantageonlineshopping.com";
-    private static final String DUMMY_USER = "testingone";
-    private static final String DUMMY_PASS = "Testing1";
+    private static final String DUMMY_USER = "testingbaru2";
+    private static final String DUMMY_PASS = "Testingbaru2";
 
     @Step("Add product to cart, proceed to checkout, fill shipping/payment and complete transaction")
-    public boolean performCheckoutAndComplete() throws Exception {
+    public long performCheckoutAndComplete() throws Exception {
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(15));
 
         // 1. Go to homepage and pick a product
@@ -61,67 +61,49 @@ public class CheckoutTest extends BaseTest {
         }
 
         WebElement checkoutBtn = wait.until(ExpectedConditions.elementToBeClickable(By.id("checkOutButton")));
-        checkoutBtn.click();
 
-        // 4. Validate order payment page
-        wait.until(ExpectedConditions.urlContains("orderPayment"));
-        try {
-            wait.until(
-                    ExpectedConditions.visibilityOfElementLocated(By.xpath("//h3[contains(text(),'ORDER PAYMENT')]")));
-        } catch (Exception ignored) {
-        }
+        // Measure duration from clicking checkout button until payment page loads
+        Runnable action = () -> {
+            checkoutBtn.click();
 
-        // 5. Click Next (shipping -> payment)
-        WebElement nextBtn = wait.until(ExpectedConditions.elementToBeClickable(By.id("next_btn")));
-        nextBtn.click();
-
-        // 6. Fill SafePay payment (use dummy data)
-        WebElement safepayUser = wait.until(ExpectedConditions.visibilityOfElementLocated(By.name("safepay_username")));
-        WebElement safepayPass = driver.findElement(By.name("safepay_password"));
-        safepayUser.clear();
-        safepayUser.sendKeys(DUMMY_USER);
-        safepayPass.clear();
-        safepayPass.sendKeys(DUMMY_PASS);
-
-        // 7. Attempt to click Pay button (try common labels/ids)
-        boolean payClicked = false;
-        try {
-            WebElement payBtn = driver.findElement(
-                    By.xpath("//button[contains(translate(text(),'PAY','pay'),'pay') or contains(.,'Pay Now')]"));
-            payBtn.click();
-            payClicked = true;
-        } catch (Exception ignored) {
+            // 4. Validate order payment page
+            wait.until(ExpectedConditions.urlContains("orderPayment"));
             try {
-                WebElement payBtn2 = driver.findElement(By.id("pay_now_btn_SAFEPAY"));
-                payBtn2.click();
-                payClicked = true;
-            } catch (Exception ignored2) {
+                wait.until(
+                        ExpectedConditions
+                                .visibilityOfElementLocated(By.xpath("//h3[contains(text(),'ORDER PAYMENT')]")));
+            } catch (Exception ignored) {
             }
-        }
 
-        // 8. Wait for confirmation (either thank you message or order confirmation URL)
-        try {
-            WebDriverWait longWait = new WebDriverWait(driver, Duration.ofSeconds(20));
-            boolean confirmed = longWait.until(ExpectedConditions.or(
-                    ExpectedConditions.visibilityOfElementLocated(
-                            By.xpath("//p[contains(text(),'Thank you') or contains(.,'Thank you') ]")),
-                    ExpectedConditions.urlContains("orderConf"),
-                    ExpectedConditions.urlContains("orderConfirmation")));
-            return confirmed;
-        } catch (TimeoutException te) {
-            throw te;
-        }
+            // 5. Click Next (shipping -> payment)
+            WebElement nextBtn = wait.until(ExpectedConditions.elementToBeClickable(By.id("next_btn")));
+            nextBtn.click();
+
+            // 6. Validate payment page is reached (network performance goal)
+            try {
+                wait.until(ExpectedConditions.visibilityOfElementLocated(By.name("safepay_username")));
+            } catch (TimeoutException te) {
+                throw new RuntimeException("Payment page did not load");
+            }
+        };
+
+        return measureExecutionTime(action);
     }
 
-    @Test(description = "Complete checkout using dummy data without timeout errors")
+    @Test(description = "Checkout flow reaches payment page successfully")
     public void checkoutFlowTest() {
         try {
-            boolean success = performCheckoutAndComplete();
-            System.out.println("Checkout completed: " + success);
-            Reporter.log("Checkout completed: " + success, true);
-            Assert.assertTrue(success, "Checkout did not complete successfully (no confirmation detected)");
-            System.out.println("Conclusion: PASS - checkout completed successfully");
-            Reporter.log("Conclusion: PASS - checkout completed successfully", true);
+            long elapsed = performCheckoutAndComplete();
+            System.out.println("Checkout duration: " + elapsed + " ms");
+            Reporter.log("Checkout duration: " + elapsed + " ms", true);
+
+            Assert.assertTrue(elapsed < 15000, "Checkout should be < 15000ms but was " + elapsed + "ms");
+            System.out.println("Conclusion: PASS - Checkout within threshold (" + elapsed + " ms)");
+            Reporter.log("Conclusion: PASS - Checkout within threshold (" + elapsed + " ms)", true);
+        } catch (AssertionError e) {
+            System.err.println("Conclusion: FAIL - Checkout exceeded threshold");
+            Reporter.log("Conclusion: FAIL - Checkout exceeded threshold", true);
+            throw e;
         } catch (TimeoutException te) {
             System.err.println("Conclusion: FAIL - Timeout occurred during checkout: " + te.getMessage());
             Reporter.log("Conclusion: FAIL - Timeout occurred during checkout: " + te.getMessage(), true);

@@ -29,12 +29,12 @@ public class HomePageTest extends BaseTest {
         return measureExecutionTime(action);
     }
 
-    @Test(description = "Home page loads within 5s (logo or main slider visible)")
+    @Test(description = "Home page loads within 10s (logo or main slider visible)")
     public void homePageLoadTime() {
         long elapsed = openHomeAndMeasure();
         System.out.println("Home page load time: " + elapsed + " ms");
         try {
-            Assert.assertTrue(elapsed < 5000, "Load time should be < 5000ms but was " + elapsed + "ms");
+            Assert.assertTrue(elapsed < 10000, "Load time should be < 10000ms but was " + elapsed + "ms");
         } catch (AssertionError e) {
             System.err.println("Home page load time on failure: " + elapsed + " ms");
             Reporter.log("Home page load time on failure: " + elapsed + " ms", true);

@@ -15,8 +15,8 @@ public class OrderHistoryTest extends BaseTest {
     @Test
     public void ordersListTiming() {
         final String HOME = "https://www.advantageonlineshopping.com";
-        final String USER = "testingone";
-        final String PASS = "Testing1";
+        final String USER = "testingbaru2";
+        final String PASS = "Testingbaru2";
 
         long duration = -1;
         String conclusion = "UNKNOWN";
@@ -32,8 +32,16 @@ public class OrderHistoryTest extends BaseTest {
             driver.findElement(By.name("password")).clear();
             driver.findElement(By.name("password")).sendKeys(PASS);
             wait.until(ExpectedConditions.invisibilityOfElementLocated(By.cssSelector("div.loader")));
-            wait.until(ExpectedConditions.elementToBeClickable(By.id("sign_in_btn")));
-            driver.findElement(By.id("sign_in_btn")).click();
+
+            // Additional wait to ensure loader is fully gone
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException ignored) {
+            }
+
+            // Use JavaScript click to avoid interception issues
+            WebElement signInBtn = wait.until(ExpectedConditions.presenceOfElementLocated(By.id("sign_in_btn")));
+            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", signInBtn);
             wait.until(ExpectedConditions.textToBePresentInElementLocated(By.id("menuUserLink"), USER));
 
             // Measure time to load orders list

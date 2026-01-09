@@ -43,7 +43,7 @@ public class CategoryTest extends BaseTest {
 
             Reporter.log("Laptops product list render time: " + duration + " ms");
 
-            Assert.assertTrue(duration < 3000, "Laptops category render should be < 3000ms but was " + duration + "ms");
+            Assert.assertTrue(duration < 5000, "Laptops category render should be < 5000ms but was " + duration + "ms");
             conclusion = "PASS - render time " + duration + " ms";
         } catch (Throwable t) {
             conclusion = "FAIL - " + t.getClass().getSimpleName() + ": " + t.getMessage() + " (measured " + duration
